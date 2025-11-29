@@ -1,9 +1,4 @@
-// import { User } from "../models/user.models.js";
-// // import { tokengenrator } from "../utils/token.js";
-// import { Contact } from "../models/contact.models.js";
-// export const creContact = async (req, res) => {
-//   try {
-//     const { name,email,phone } = req.body;
+
 
 import { User } from "../models/user.models.js";
 import { asynchandler } from "../utils/asynchandler.js";
@@ -11,45 +6,10 @@ import ApiError from "../utils/ApiError.js";
 import { uploadCloudnary } from "../utils/cloudnary.js";
 import { Apiresponse } from "../utils/Apiresponse.js";
 import jwt from 'jsonwebtoken'
+import crypto from 'crypto'
 
-//     const contact = await Contact.create({ name,email,phone,refresh_token });
-//     // tokengenrator(user);
 
-//     res.status(201).json({
-//       success: true,
-//       message: "Consultation book  successfully",
-//       data:contact,
-//     });
-//   } catch (error) {
-//     res.status(500).json({ success: false, error: error.message });
-//   }
-// };
 
-// export const createUser = async (req, res) => {
-//   try {
-//     const { username, email,password } = req.body;
-
-//     const user = await User.create({ username, email,password });
-//     // tokengenrator(user);
-
-//     res.status(201).json({
-//       success: true,
-//       message: "User created successfully",
-//       data: user,
-//     });
-//   } catch (error) {
-//     res.status(500).json({ success: false, error: error.message });
-//   }
-// };
-
-// export const getUsers = async (req, res) => {
-//   try {
-//     const users = await User.find({});
-//     res.status(200).json({ message:"data fetch sucessfully",success: true, data: users });
-//   } catch (error) {
-//     res.status(500).json({ success: false, error: error.message });
-//   }
-// };
 
 export const createUser = asynchandler(async (req, res) => {
   const { username, email, password } = req.body;
@@ -197,4 +157,76 @@ export const refreshAccessToken=asynchandler(async(req,res)=>{
 
   }
 })
+
+
+
+
+export const forgotpassword = asynchandler(async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) throw new ApiError(400, "Email is required");
+
+  const user = await User.findOne({ email });
+  if (!user) throw new ApiError(404, "User not found");
+
+  const resetToken = crypto.randomBytes(32).toString("hex");
+
+  user.resetPasswordToken = crypto
+    .createHash("sha256")
+    .update(resetToken)
+    .digest("hex");
+
+  user.resetPasswordExpire = Date.now() + 10 * 60 * 1000;
+
+  await user.save({ validateBeforeSave: false });
+
+ const resetURL = `http://localhost:8000/api/users/reset-password/${resetToken}`;
+
+
+  return res
+    .status(200)
+    .json(new Apiresponse(200, { resetURL }, "Reset link generated"));
+});
+
+export const resetPassword = asynchandler(async (req, res) => {
+  const { token } = req.params;
+  const { password } = req.body;
+   console.log("\n========== RESET PASSWORD DEBUG ==========");
+  console.log("Incoming RAW token:", token);
+
+  
+
+  if (!password) {
+    throw new ApiError(400, "Password is required");
+  }
+
+  const hashedToken = crypto
+    .createHash("sha256")
+    .update(token)
+    .digest("hex");
+    console.log("hashedToken",hashedToken);
+
+  const user = await User.findOne({
+    resetPasswordToken: hashedToken,
+    resetPasswordExpire: { $gt: Date.now() }
+  });
+
+  if (!user) {
+    throw new ApiError(400, "Invalid or expired token");
+  }
+
+  // ✔ bcrypt will hash this automatically in pre-save hook
+  user.password = password;
+
+  user.resetPasswordToken = undefined;
+  user.resetPasswordExpire = undefined;
+
+  await user.save(); // <-- bcrypt runs here
+
+  return res
+    .status(200)
+    .json(new Apiresponse(200, {}, "Password reset successful"));
+});
+
+
 
