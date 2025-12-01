@@ -191,8 +191,7 @@ export const forgotpassword = asynchandler(async (req, res) => {
 export const resetPassword = asynchandler(async (req, res) => {
   const { token } = req.params;
   const { password } = req.body;
-   console.log("\n========== RESET PASSWORD DEBUG ==========");
-  console.log("Incoming RAW token:", token);
+  
 
   
 

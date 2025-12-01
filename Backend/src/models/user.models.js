@@ -12,28 +12,28 @@ const userSchema = new mongoose.Schema(
       index: true,
       unique: true,
     },
-    profile_image:{type:String,required:true},
+    profile_image: { type: String, required: true },
     email: { type: String, unique: true, required: true },
     password: { type: String, required: [true, "Password is required"] },
-    refresh_token:{type:String}
-
+    refresh_token: { type: String },
+    resetPasswordToken: { type: String },
+    resetPasswordExpire: { type: Date },
   },
   { timestamps: true }
 );
 
-userSchema.pre("save",async function(next){
-  if(!this.isModified("password")) return next();
-  this.password=await bcrypt.hash(this.password,10);
+userSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) return next();
+  this.password = await bcrypt.hash(this.password, 10);
   next();
-})
+});
 
-userSchema.methods.isPasswordcorect=async function(password){
-   return await bcrypt.compare(password,this.password);
-}
-
+userSchema.methods.isPasswordcorect = async function (password) {
+  return await bcrypt.compare(password, this.password);
+};
 
 userSchema.methods.genrateAccesstoken = async function () {
- return  jwt.sign(
+  return jwt.sign(
     {
       _id: this._id,
       username: this.username,
@@ -44,7 +44,7 @@ userSchema.methods.genrateAccesstoken = async function () {
   );
 };
 userSchema.methods.genrateRefreshtoken = async function () {
- return  jwt.sign(
+  return jwt.sign(
     {
       _id: this._id,
     },
