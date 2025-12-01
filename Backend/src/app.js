@@ -8,9 +8,11 @@ import router from "./routes/user.routes.js";
 const app = express();
 
 // Middlewares
-app.use(cors({
-  origin: "*",
-}));
+app.use(
+  cors({
+    origin: "*",
+  })
+);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -26,5 +28,3 @@ app.get("/", (req, res) => {
 });
 
 export { app };
-
-

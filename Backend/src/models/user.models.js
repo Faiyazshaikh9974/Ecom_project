@@ -12,10 +12,11 @@ const userSchema = new mongoose.Schema(
       index: true,
       unique: true,
     },
-    profile_image:{type:String,required:true},
+    profile_image:{type:String,},
     email: { type: String, unique: true, required: true },
     password: { type: String, required: [true, "Password is required"] },
-    refresh_token:{type:String}
+    refresh_token:{type:String},
+    phone: {type: Number}
 
   },
   { timestamps: true }
