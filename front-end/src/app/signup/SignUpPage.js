@@ -118,7 +118,7 @@ function SignUpPage() {
               {...register("profile_image", { required: true })}
             />
             {errors.phone && (
-              <p className="text-red-500 !text-sm mt-1">
+              <p className="text-red-500 text-sm mt-1">
                 {errors.phone.message}
               </p>
             )}
