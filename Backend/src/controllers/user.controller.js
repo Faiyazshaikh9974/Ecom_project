@@ -7,6 +7,7 @@ import { uploadCloudnary } from "../utils/cloudnary.js";
 import { Apiresponse } from "../utils/Apiresponse.js";
 import jwt from 'jsonwebtoken'
 import crypto from 'crypto'
+import { sendEmail } from "../utils/sendEmail.js";
 
 
 
@@ -169,23 +170,28 @@ export const forgotpassword = asynchandler(async (req, res) => {
   const user = await User.findOne({ email });
   if (!user) throw new ApiError(404, "User not found");
 
+  // Generate token
   const resetToken = crypto.randomBytes(32).toString("hex");
+  const hashedToken = crypto.createHash("sha256").update(resetToken).digest("hex");
 
-  user.resetPasswordToken = crypto
-    .createHash("sha256")
-    .update(resetToken)
-    .digest("hex");
-
+  user.resetPasswordToken = hashedToken;
   user.resetPasswordExpire = Date.now() + 10 * 60 * 1000;
-
   await user.save({ validateBeforeSave: false });
 
- const resetURL = `http://localhost:8000/api/users/reset-password/${resetToken}`;
+  const resetURL = `http://localhost:3000/reset-password/${resetToken}`;
 
+  const html = `
+    <h2>Password Reset Request</h2>
+    <p>Click the link below to reset your password:</p>
+    <a href="${resetURL}" target="_blank">Reset Password</a>
+    <p>This link expires in 10 minutes.</p>
+  `;
 
-  return res
+  await sendEmail(email, "Password Reset Link", html);
+
+  res
     .status(200)
-    .json(new Apiresponse(200, { resetURL }, "Reset link generated"));
+    .json(new Apiresponse(200, {}, "Reset email sent to your inbox"));
 });
 
 export const resetPassword = asynchandler(async (req, res) => {
